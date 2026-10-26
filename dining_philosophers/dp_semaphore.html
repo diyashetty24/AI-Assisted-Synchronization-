@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dining Philosophers (4) - Semaphores (room = 3)</title>
+<style>
+  body { font-family: sans-serif; margin: 16px; background: #f4f5f7; }
+  h1 { font-size: 20px; }
+  .controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+  button, select { padding: 6px 12px; font-size: 14px; }
+  #slider { flex: 1; min-width: 150px; }
+  #stage { background: white; border: 1px solid #ccc; border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; }
+  .box { min-width: 84px; padding: 8px; border: 2px solid #777; border-radius: 8px; text-align: center; font-size: 13px; }
+  .box b { display: block; font-size: 15px; }
+  .table { position: relative; height: 380px; }
+  .table .box { position: absolute; transform: translate(-50%, -50%); }
+  .vars span { display: inline-block; background: #e3e8ff; padding: 3px 10px; margin: 10px 8px 0 0; border-radius: 6px; }
+  #log { height: 220px; overflow: auto; background: #111; color: #ccc; padding: 8px; border-radius: 8px; font: 12px monospace; }
+  #log .latest { color: #7cfc9a; }
+  .legend { font-size: 12px; color: #555; margin-top: 8px; }
+</style>
+</head>
+<body>
+<h1>Dining Philosophers (4) - Semaphores (room = 3)</h1>
+
+<div class="controls">
+  <button id="startBtn">Start</button>
+  <button id="pauseBtn">Pause</button>
+  <button id="resetBtn">Reset</button>
+  <select id="speed">
+    <option value="0.5">0.5x</option>
+    <option value="1" selected>1x</option>
+    <option value="2">2x</option>
+    <option value="4">4x</option>
+  </select>
+  <input type="range" id="slider" min="0" value="0">
+  <span id="position"></span>
+</div>
+
+<div id="stage"></div>
+<div id="log"></div>
+
+<script>
+// All events recorded by the Python program.
+var data = {"title": "Dining Philosophers (4) - Semaphores (room = 3)", "actors": ["P0", "P1", "P2", "P3"], "chopsticks": [0, 1, 2, 3], "circle": true, "events": [{"time": 0.001, "kind": "state", "message": "P0 is now thinking", "actor": "P0", "state": "thinking"}, {"time": 0.001, "kind": "state", "message": "P1 is now thinking", "actor": "P1", "state": "thinking"}, {"time": 0.002, "kind": "state", "message": "P2 is now thinking", "actor": "P2", "state": "thinking"}, {"time": 0.002, "kind": "state", "message": "P3 is now thinking", "actor": "P3", "state": "thinking"}, {"time": 0.242, "kind": "state", "message": "P2 is now hungry", "actor": "P2", "state": "hungry"}, {"time": 0.242, "kind": "chopstick", "message": "P2 picks up chopstick 2", "chopstick": 2, "owner": "P2"}, {"time": 0.242, "kind": "chopstick", "message": "P2 picks up chopstick 3", "chopstick": 3, "owner": "P2"}, {"time": 0.242, "kind": "state", "message": "P2 is now eating", "actor": "P2", "state": "eating"}, {"time": 0.317, "kind": "state", "message": "P3 is now hungry", "actor": "P3", "state": "hungry"}, {"time": 0.395, "kind": "state", "message": "P0 is now hungry", "actor": "P0", "state": "hungry"}, {"time": 0.396, "kind": "chopstick", "message": "P0 picks up chopstick 0", "chopstick": 0, "owner": "P0"}, {"time": 0.396, "kind": "chopstick", "message": "P0 picks up chopstick 1", "chopstick": 1, "owner": "P0"}, {"time": 0.396, "kind": "state", "message": "P0 is now eating", "actor": "P0", "state": "eating"}, {"time": 0.424, "kind": "state", "message": "P1 is now hungry", "actor": "P1", "state": "hungry"}, {"time": 0.431, "kind": "chopstick", "message": "P2 puts down chopstick 2", "chopstick": 2, "owner": null}, {"time": 0.432, "kind": "chopstick", "message": "P2 puts down chopstick 3", "chopstick": 3, "owner": null}, {"time": 0.432, "kind": "state", "message": "P2 is now thinking", "actor": "P2", "state": "thinking"}, {"time": 0.432, "kind": "chopstick", "message": "P3 picks up chopstick 3", "chopstick": 3, "owner": "P3"}, {"time": 0.662, "kind": "state", "message": "P2 is now hungry", "actor": "P2", "state": "hungry"}, {"time": 0.771, "kind": "chopstick", "message": "P0 puts down chopstick 0", "chopstick": 0, "owner": null}, {"time": 0.771, "kind": "chopstick", "message": "P0 puts down chopstick 1", "chopstick": 1, "owner": null}, {"time": 0.771, "kind": "state", "message": "P0 is now thinking", "actor": "P0", "state": "thinking"}, {"time": 0.771, "kind": "chopstick", "message": "P1 picks up chopstick 1", "chopstick": 1, "owner": "P1"}, {"time": 0.772, "kind": "chopstick", "message": "P2 picks up chopstick 2", "chopstick": 2, "owner": "P2"}, {"time": 0.772, "kind": "chopstick", "message": "P3 picks up chopstick 0", "chopstick": 0, "owner": "P3"}, {"time": 0.772, "kind": "state", "message": "P3 is now eating", "actor": "P3", "state": "eating"}, {"time": 1.019, "kind": "state", "message": "P0 is now hungry", "actor": "P0", "state": "hungry"}, {"time": 1.161, "kind": "chopstick", "message": "P3 puts down chopstick 3", "chopstick": 3, "owner": null}, {"time": 1.162, "kind": "chopstick", "message": "P3 puts down chopstick 0", "chopstick": 0, "owner": null}, {"time": 1.162, "kind": "state", "message": "P3 is now thinking", "actor": "P3", "state": "thinking"}, {"time": 1.163, "kind": "chopstick", "message": "P2 picks up chopstick 3", "chopstick": 3, "owner": "P2"}, {"time": 1.163, "kind": "state", "message": "P2 is now eating", "actor": "P2", "state": "eating"}, {"time": 1.163, "kind": "chopstick", "message": "P0 picks up chopstick 0", "chopstick": 0, "owner": "P0"}, {"time": 1.333, "kind": "chopstick", "message": "P2 puts down chopstick 2", "chopstick": 2, "owner": null}, {"time": 1.333, "kind": "chopstick", "message": "P2 puts down chopstick 3", "chopstick": 3, "owner": null}, {"time": 1.333, "kind": "state", "message": "P2 is now thinking", "actor": "P2", "state": "thinking"}, {"time": 1.334, "kind": "chopstick", "message": "P1 picks up chopstick 2", "chopstick": 2, "owner": "P1"}, {"time": 1.334, "kind": "state", "message": "P1 is now eating", "actor": "P1", "state": "eating"}, {"time": 1.382, "kind": "state", "message": "P3 is now hungry", "actor": "P3", "state": "hungry"}, {"time": 1.383, "kind": "chopstick", "message": "P3 picks up chopstick 3", "chopstick": 3, "owner": "P3"}, {"time": 1.603, "kind": "chopstick", "message": "P1 puts down chopstick 1", "chopstick": 1, "owner": null}, {"time": 1.603, "kind": "chopstick", "message": "P1 puts down chopstick 2", "chopstick": 2, "owner": null}, {"time": 1.604, "kind": "state", "message": "P1 is now thinking", "actor": "P1", "state": "thinking"}, {"time": 1.604, "kind": "chopstick", "message": "P0 picks up chopstick 1", "chopstick": 1, "owner": "P0"}, {"time": 1.605, "kind": "state", "message": "P0 is now eating", "actor": "P0", "state": "eating"}, {"time": 1.683, "kind": "state", "message": "P2 is now hungry", "actor": "P2", "state": "hungry"}, {"time": 1.683, "kind": "chopstick", "message": "P2 picks up chopstick 2", "chopstick": 2, "owner": "P2"}, {"time": 1.834, "kind": "chopstick", "message": "P0 puts down chopstick 0", "chopstick": 0, "owner": null}, {"time": 1.834, "kind": "chopstick", "message": "P0 puts down chopstick 1", "chopstick": 1, "owner": null}, {"time": 1.834, "kind": "state", "message": "P0 is now thinking", "actor": "P0", "state": "thinking"}, {"time": 1.834, "kind": "chopstick", "message": "P3 picks up chopstick 0", "chopstick": 0, "owner": "P3"}, {"time": 1.835, "kind": "state", "message": "P3 is now eating", "actor": "P3", "state": "eating"}, {"time": 1.874, "kind": "state", "message": "P1 is now hungry", "actor": "P1", "state": "hungry"}, {"time": 1.874, "kind": "chopstick", "message": "P1 picks up chopstick 1", "chopstick": 1, "owner": "P1"}, {"time": 2.079, "kind": "state", "message": "P0 is now hungry", "actor": "P0", "state": "hungry"}, {"time": 2.084, "kind": "chopstick", "message": "P3 puts down chopstick 3", "chopstick": 3, "owner": null}, {"time": 2.084, "kind": "chopstick", "message": "P3 puts down chopstick 0", "chopstick": 0, "owner": null}, {"time": 2.084, "kind": "state", "message": "P3 is now thinking", "actor": "P3", "state": "thinking"}, {"time": 2.085, "kind": "chopstick", "message": "P2 picks up chopstick 3", "chopstick": 3, "owner": "P2"}, {"time": 2.085, "kind": "state", "message": "P2 is now eating", "actor": "P2", "state": "eating"}, {"time": 2.086, "kind": "chopstick", "message": "P0 picks up chopstick 0", "chopstick": 0, "owner": "P0"}, {"time": 2.285, "kind": "state", "message": "P3 is now hungry", "actor": "P3", "state": "hungry"}, {"time": 2.392, "kind": "chopstick", "message": "P2 puts down chopstick 2", "chopstick": 2, "owner": null}, {"time": 2.392, "kind": "chopstick", "message": "P2 puts down chopstick 3", "chopstick": 3, "owner": null}, {"time": 2.393, "kind": "state", "message": "P2 finished all meals", "actor": "P2", "state": "done"}, {"time": 2.393, "kind": "chopstick", "message": "P1 picks up chopstick 2", "chopstick": 2, "owner": "P1"}, {"time": 2.393, "kind": "state", "message": "P1 is now eating", "actor": "P1", "state": "eating"}, {"time": 2.393, "kind": "chopstick", "message": "P3 picks up chopstick 3", "chopstick": 3, "owner": "P3"}, {"time": 2.754, "kind": "chopstick", "message": "P1 puts down chopstick 1", "chopstick": 1, "owner": null}, {"time": 2.754, "kind": "chopstick", "message": "P1 puts down chopstick 2", "chopstick": 2, "owner": null}, {"time": 2.755, "kind": "state", "message": "P1 is now thinking", "actor": "P1", "state": "thinking"}, {"time": 2.755, "kind": "chopstick", "message": "P0 picks up chopstick 1", "chopstick": 1, "owner": "P0"}, {"time": 2.756, "kind": "state", "message": "P0 is now eating", "actor": "P0", "state": "eating"}, {"time": 3.136, "kind": "chopstick", "message": "P0 puts down chopstick 0", "chopstick": 0, "owner": null}, {"time": 3.137, "kind": "chopstick", "message": "P0 puts down chopstick 1", "chopstick": 1, "owner": null}, {"time": 3.137, "kind": "state", "message": "P0 finished all meals", "actor": "P0", "state": "done"}, {"time": 3.138, "kind": "chopstick", "message": "P3 picks up chopstick 0", "chopstick": 0, "owner": "P3"}, {"time": 3.138, "kind": "state", "message": "P3 is now eating", "actor": "P3", "state": "eating"}, {"time": 3.138, "kind": "state", "message": "P1 is now hungry", "actor": "P1", "state": "hungry"}, {"time": 3.138, "kind": "chopstick", "message": "P1 picks up chopstick 1", "chopstick": 1, "owner": "P1"}, {"time": 3.139, "kind": "chopstick", "message": "P1 picks up chopstick 2", "chopstick": 2, "owner": "P1"}, {"time": 3.139, "kind": "state", "message": "P1 is now eating", "actor": "P1", "state": "eating"}, {"time": 3.472, "kind": "chopstick", "message": "P3 puts down chopstick 3", "chopstick": 3, "owner": null}, {"time": 3.472, "kind": "chopstick", "message": "P3 puts down chopstick 0", "chopstick": 0, "owner": null}, {"time": 3.473, "kind": "state", "message": "P3 finished all meals", "actor": "P3", "state": "done"}, {"time": 3.544, "kind": "chopstick", "message": "P1 puts down chopstick 1", "chopstick": 1, "owner": null}, {"time": 3.545, "kind": "chopstick", "message": "P1 puts down chopstick 2", "chopstick": 2, "owner": null}, {"time": 3.545, "kind": "state", "message": "P1 finished all meals", "actor": "P1", "state": "done"}]};
+
+// Box colour for each state.
+var colours = {
+  idle: "#e5e7eb", thinking: "#e5e7eb", waiting: "#fde68a", hungry: "#fde68a",
+  reading: "#93c5fd", writing: "#fca5a5", eating: "#86efac", done: "#d1d5db"
+};
+
+var current = -1;     // index of the last event shown (-1 = nothing yet)
+var timer = null;     // set while the replay is playing
+
+function $(id) { return document.getElementById(id); }
+$("slider").max = data.events.length;
+
+// Replay events 0..upTo from the beginning to find out what things look like.
+function stateAt(upTo) {
+  var states = {}, chopsticks = {}, vars = {};
+  data.actors.forEach(function (a) { states[a] = "idle"; });
+  data.chopsticks.forEach(function (f) { chopsticks[f] = null; });
+
+  for (var i = 0; i <= upTo; i++) {
+    var e = data.events[i];
+    if (e.kind === "state") states[e.actor] = e.state;
+    if (e.kind === "chopstick") chopsticks[e.chopstick] = e.owner;
+    if (e.kind === "var") vars[e.name] = e.value;
+  }
+  return { states: states, chopsticks: chopsticks, vars: vars };
+}
+
+function box(title, text, colour, extraStyle) {
+  return '<div class="box" style="background:' + colour + ';' + (extraStyle || '') + '">' +
+         '<b>' + title + '</b>' + text + '</div>';
+}
+
+function draw() {
+  var s = stateAt(current);
+  var n = data.actors.length;
+  var html = "";
+
+  if (data.circle) {
+    // Philosophers around a table, chopsticks in between.
+    html += '<div class="table">';
+    data.actors.forEach(function (name, k) {
+      var angle = 2 * Math.PI * k / n - Math.PI / 2;
+      var pos = "left:" + (50 + 38 * Math.cos(angle)) + "%;top:" + (50 + 40 * Math.sin(angle)) + "%";
+      html += box(name, s.states[name], colours[s.states[name]], pos);
+    });
+    data.chopsticks.forEach(function (f, k) {
+      var angle = 2 * Math.PI * (k + 0.5) / n - Math.PI / 2;
+      var pos = "left:" + (50 + 20 * Math.cos(angle)) + "%;top:" + (50 + 22 * Math.sin(angle)) +
+                "%;min-width:64px;font-size:11px";
+      var owner = s.chopsticks[f];
+      html += box("Chopstick " + f, owner ? "held by " + owner : "free", owner ? "#fcd34d" : "white", pos);
+    });
+    html += "</div>";
+  } else {
+    html += '<div class="row">';
+    data.actors.forEach(function (name) {
+      html += box(name, s.states[name], colours[s.states[name]]);
+    });
+    html += "</div>";
+  }
+
+  html += '<div class="vars">';
+  Object.keys(s.vars).forEach(function (k) {
+    html += "<span>" + k + ": <b>" + s.vars[k] + "</b></span>";
+  });
+  html += "</div>";
+  html += '<div class="legend">grey: idle/thinking, yellow: waiting/hungry, blue: reading, red: writing, green: eating</div>';
+  $("stage").innerHTML = html;
+
+  // Log: show up to the last 150 events.
+  var log = "";
+  for (var i = Math.max(0, current - 150); i <= current; i++) {
+    var e = data.events[i];
+    log += '<div class="' + (i === current ? "latest" : "") + '">[' + e.time.toFixed(3) + "s] " + e.message + "</div>";
+  }
+  $("log").innerHTML = log;
+  $("log").scrollTop = $("log").scrollHeight;
+
+  $("slider").value = current + 1;
+  $("position").textContent = (current + 1) + " / " + data.events.length;
+}
+
+function nextStep() {
+  if (current < data.events.length - 1) { current++; draw(); }
+  else pause();
+}
+
+function play() {
+  pause();
+  if (current >= data.events.length - 1) current = -1;   // restart if finished
+  timer = setInterval(nextStep, 500 / parseFloat($("speed").value));
+}
+
+function pause() {
+  if (timer) { clearInterval(timer); timer = null; }
+}
+
+$("startBtn").onclick = play;
+$("pauseBtn").onclick = pause;
+$("resetBtn").onclick = function () { pause(); current = -1; draw(); };
+$("speed").onchange = function () { if (timer) play(); };
+$("slider").oninput = function (e) { pause(); current = parseInt(e.target.value) - 1; draw(); };
+
+draw();
+</script>
+</body>
+</html>
